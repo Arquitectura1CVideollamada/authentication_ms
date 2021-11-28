@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  
+  ts-node-docker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ts-node-docker
+    expose:
+      - '3000'
+    ports:
+      - '3000:3000'
+    links:
+      - mongo
+    depends_on:
+      - mongo
+    environment:
+      WAIT_HOSTS: mongo:27018
+    command: npm run dev
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports:
+      - '27018:27018'
+    command: mongod --port 27018
