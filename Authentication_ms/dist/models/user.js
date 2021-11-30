@@ -30,6 +30,9 @@ const userSchema = new mongoose_1.Schema({
     password: {
         type: String,
         required: true,
+    },
+    image: {
+        type: String
     }
 }, {
     timestamps: true
