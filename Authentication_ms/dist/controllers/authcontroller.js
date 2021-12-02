@@ -12,8 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updprofile = exports.profile = exports.singin = exports.singup = void 0;
+exports.uservalidation = exports.loadimage = exports.updprofile = exports.profile = exports.signin = exports.signup = void 0;
 const user_1 = __importDefault(require("../models/user"));
+const usertoken_1 = __importDefault(require("../models/usertoken"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const path_1 = __importDefault(require("path"));
 const fs_extra_1 = __importDefault(require("fs-extra"));
@@ -26,7 +27,9 @@ function ValidateEmail(input) {
         return false;
     }
 }
-const singup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+//import nodemailer  from 'libs/mailer';
+const nodemailer = require("../libs/mailer");
+const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = new user_1.default({
             username: req.body.username,
@@ -41,6 +44,19 @@ const singup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         ;
         const saveduser = yield user.save();
+        try {
+            const tk = jsonwebtoken_1.default.sign({ email: req.body.email }, process.env.TOKENSECRET || 'tokentest');
+            const usertoken = new usertoken_1.default({
+                user: saveduser,
+                token: tk
+            });
+            const savedusertoken = yield usertoken.save();
+            const mail = nodemailer.sendConfirmationEmail(saveduser.username, saveduser.email, savedusertoken.token);
+            console.log(mail);
+        }
+        catch (e) {
+            res.status(400).json(e);
+        }
         res.json(saveduser);
         console.log(saveduser);
     }
@@ -48,8 +64,8 @@ const singup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(400).json(e);
     }
 });
-exports.singup = singup;
-const singin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.signup = signup;
+const signin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield user_1.default.findOne({ email: req.body.email });
     if (!user) {
         return res.status(400).json('invalid email or password');
@@ -58,12 +74,17 @@ const singin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!correctpass) {
         return res.status(400).json('invalid password');
     }
+    if (user.status != "Active") {
+        return res.status(401).send({
+            message: "Pending Account. Please Verify Your Email!",
+        });
+    }
     const token = jsonwebtoken_1.default.sign({ _id: user._id }, process.env.TOKENSECRET || 'tokentest', {
         expiresIn: 60 * 60 * 24
     });
     res.header('auth-token', token).json(user);
 });
-exports.singin = singin;
+exports.signin = signin;
 const profile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield user_1.default.findById(req.userId, { password: 0 });
     if (!user) {
@@ -106,4 +127,26 @@ const updprofile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.updprofile = updprofile;
+const request_1 = __importDefault(require("request"));
+const loadimage = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const img = req.file;
+    if (img) {
+        const user = yield user_1.default.findById(req.userId, { password: 0 });
+        //request.post('host.docker.internal:3001/',);
+        request_1.default.post('localhost:3001/');
+    }
+});
+exports.loadimage = loadimage;
+const uservalidation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.params);
+    const ut = yield usertoken_1.default.findOne({ token: req.params.confirmationCode });
+    console.log(ut);
+    if (ut) {
+        const userval = ut === null || ut === void 0 ? void 0 : ut.user;
+        console.log(userval);
+        yield user_1.default.findByIdAndUpdate(userval, { status: "Active" }, { upsert: true });
+    }
+    res.json();
+});
+exports.uservalidation = uservalidation;
 //# sourceMappingURL=authcontroller.js.map

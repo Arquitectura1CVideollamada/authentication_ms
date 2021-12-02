@@ -5,6 +5,7 @@ export interface IUser extends Document{
     email:string,
     password:string,
     image:string,
+    status:string,
     encryptPassword(password:string):Promise<string>,
     validatePassword(password:string):Promise<boolean>
 }
@@ -28,7 +29,12 @@ const userSchema =new Schema({
     },
     image:{
         type:String
-    }
+    },
+    status: {
+        type: String, 
+        enum: ['Pending', 'Active'],
+        default: 'Pending'
+      },
 },{
     timestamps: true
 });

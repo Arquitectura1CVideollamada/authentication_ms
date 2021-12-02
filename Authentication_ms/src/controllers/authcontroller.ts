@@ -2,6 +2,8 @@ import {Request,Response} from 'express'
 
 import User,{IUser} from '../models/user';
 
+import Usertoken, { IUsertoken } from '../models/usertoken';
+
 import jwt from 'jsonwebtoken';
 
 import path from 'path';
@@ -18,7 +20,9 @@ function ValidateEmail(input:string):boolean{
     }
   }
 
-export const singup= async(req:Request,res:Response)=>{
+//import nodemailer  from 'libs/mailer';
+const nodemailer = require("../libs/mailer");
+export const signup= async(req:Request,res:Response)=>{
     try {
         const user : IUser=new User({
         username:req.body.username,
@@ -32,6 +36,21 @@ export const singup= async(req:Request,res:Response)=>{
         return res.status(400).json('invalid email');
     };
     const saveduser = await user.save();
+    try {
+        const tk = jwt.sign({email: req.body.email}, process.env.TOKENSECRET||'tokentest');
+        const usertoken : IUsertoken=new Usertoken({
+        user:saveduser,
+        token:tk});
+        const savedusertoken = await usertoken.save();
+        const mail=nodemailer.sendConfirmationEmail(
+        saveduser.username,
+        saveduser.email,
+        savedusertoken.token
+        );
+        console.log(mail)
+    }catch (e) {
+        res.status(400).json(e);
+    }
     res.json(saveduser);
     console.log(saveduser);
     } catch (e) {
@@ -39,7 +58,7 @@ export const singup= async(req:Request,res:Response)=>{
     }
     
 }
-export const singin=async (req:Request,res:Response)=>{
+export const signin=async (req:Request,res:Response)=>{
     const user=await User.findOne({email: req.body.email});
     if(!user){
         return res.status(400).json('invalid email or password');
@@ -47,6 +66,11 @@ export const singin=async (req:Request,res:Response)=>{
     const correctpass:boolean=await user.validatePassword(req.body.password);
     if(!correctpass){
         return res.status(400).json('invalid password');
+    }
+    if(user.status != "Active") {
+        return res.status(401).send({
+          message: "Pending Account. Please Verify Your Email!",
+        });
     }
     const token:string=jwt.sign({_id:user._id},process.env.TOKENSECRET||'tokentest',{
         expiresIn:60*60*24
@@ -92,5 +116,27 @@ export const updprofile=async (req:Request,res:Response)=>{
     } catch (e) {
         res.status(400).json(e);
     }
+}
+import { v4 as uuidv4 } from 'uuid';
+import request from 'request';
+export const loadimage=async (req:Request,res:Response)=>{
+    const img=req.file;
+    if(img){
+        const user=await User.findById(req.userId,{password:0});
+        //request.post('host.docker.internal:3001/',);
+        request.post('localhost:3001/',);
+    }
+}
+
+export const uservalidation=async (req:Request,res:Response)=>{
+    console.log(req.params);
+    const ut=await Usertoken.findOne({token:req.params.confirmationCode});
+    console.log(ut);
+    if(ut){
+        const userval=ut?.user;
+        console.log(userval);
+        await User.findByIdAndUpdate(userval,{status:"Active"}, {upsert: true});
+    }
+    res.json()
 }
 

@@ -33,7 +33,12 @@ const userSchema = new mongoose_1.Schema({
     },
     image: {
         type: String
-    }
+    },
+    status: {
+        type: String,
+        enum: ['Pending', 'Active'],
+        default: 'Pending'
+    },
 }, {
     timestamps: true
 });

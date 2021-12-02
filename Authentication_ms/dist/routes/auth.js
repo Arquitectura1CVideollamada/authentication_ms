@@ -9,12 +9,16 @@ const authcontroller_1 = require("../controllers/authcontroller");
 const authcontroller_2 = require("../controllers/authcontroller");
 const authcontroller_3 = require("../controllers/authcontroller");
 const authcontroller_4 = require("../controllers/authcontroller");
+const authcontroller_5 = require("../controllers/authcontroller");
+const authcontroller_6 = require("../controllers/authcontroller");
 //import {updprofileimg} from '../controllers/authcontroller';
 const multer_1 = __importDefault(require("../libs/multer"));
-router.post('/singup', authcontroller_2.singup);
-router.post('/singin', authcontroller_1.singin);
+router.post('/signup', authcontroller_2.signup);
+router.post('/signin', authcontroller_1.signin);
 const validateToken_1 = require("../libs/validateToken");
 router.get('/profile', validateToken_1.tokenval, authcontroller_3.profile);
 router.put('/profile', validateToken_1.tokenval, multer_1.default.single('image'), authcontroller_4.updprofile);
+router.post('/image', validateToken_1.tokenval, authcontroller_5.loadimage);
+router.get('/confirm/:confirmationCode', authcontroller_6.uservalidation);
 exports.default = router;
 //# sourceMappingURL=auth.js.map
