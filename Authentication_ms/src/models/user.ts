@@ -36,7 +36,7 @@ const userSchema =new Schema({
         default: 'Pending'
       },
 },{
-    timestamps: true
+    //timestamps: true
 });
 
 userSchema.methods.encryptPassword=async(password:string):Promise<string> =>{
@@ -46,4 +46,5 @@ userSchema.methods.encryptPassword=async(password:string):Promise<string> =>{
 userSchema.methods.validatePassword= async function(password:string):Promise<boolean>{
     return await bcrypt.compare(password,this.password);
 }
+
 export default model<IUser>('Authms',userSchema);

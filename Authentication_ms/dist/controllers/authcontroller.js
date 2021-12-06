@@ -12,11 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uservalidation = exports.loadimage = exports.updprofile = exports.profile = exports.signin = exports.signup = void 0;
+exports.imagedownload = exports.imageload = exports.uservalidation = exports.updprofile = exports.profile = exports.signin = exports.signup = void 0;
 const user_1 = __importDefault(require("../models/user"));
 const usertoken_1 = __importDefault(require("../models/usertoken"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const path_1 = __importDefault(require("path"));
 const fs_extra_1 = __importDefault(require("fs-extra"));
 function ValidateEmail(input) {
     var validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
@@ -30,11 +29,14 @@ function ValidateEmail(input) {
 //import nodemailer  from 'libs/mailer';
 const nodemailer = require("../libs/mailer");
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('singup r');
+    console.log(req.body);
     try {
         const user = new user_1.default({
             username: req.body.username,
             email: req.body.email,
-            image: null,
+            image: "",
+            status: "Pending",
             password: req.body.password
         });
         user.password = yield user.encryptPassword(user.password);
@@ -57,8 +59,13 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         catch (e) {
             res.status(400).json(e);
         }
-        res.json(saveduser);
-        console.log(saveduser);
+        const ere = saveduser.toJSON();
+        delete ere['__v'];
+        delete ere['_id'];
+        //delete ere['createdAt'];
+        //delete ere['updatedAt'];
+        console.log(ere);
+        res.json(ere);
     }
     catch (e) {
         res.status(400).json(e);
@@ -82,61 +89,68 @@ const signin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = jsonwebtoken_1.default.sign({ _id: user._id }, process.env.TOKENSECRET || 'tokentest', {
         expiresIn: 60 * 60 * 24
     });
-    res.header('auth-token', token).json(user);
+    const ere = user.toJSON();
+    console.log(ere);
+    res.header('auth-token', token).json({ 'authtoken': token });
 });
 exports.signin = signin;
 const profile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //const user=await User.findById(req.userId,{password:0});
     const user = yield user_1.default.findById(req.userId, { password: 0 });
     if (!user) {
         res.status(404).json('invalid user');
     }
+    console.log(user);
     res.json(user);
 });
 exports.profile = profile;
+const ftp = require("../libs/ftp");
 const updprofile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     console.log('upd');
+    const us = yield user_1.default.findById(req.userId);
     try {
         const newuser = new user_1.default({
             username: req.body.username,
-            email: req.body.email,
             password: req.body.password,
-            image: (_a = req.file) === null || _a === void 0 ? void 0 : _a.path
+            image: req.body.image
         });
+        if (us) {
+            newuser.email = us === null || us === void 0 ? void 0 : us.email;
+            newuser.status = us === null || us === void 0 ? void 0 : us.status;
+        }
         if (newuser.password) {
             newuser.password = yield newuser.encryptPassword(newuser.password);
         }
         if (newuser.image) {
-            const oldimg = yield user_1.default.findById(req.userId);
-            if (oldimg === null || oldimg === void 0 ? void 0 : oldimg.image) {
-                const dir = oldimg.image;
-                yield fs_extra_1.default.unlink(path_1.default.resolve(dir));
+            if (us) {
+                const oldim = us === null || us === void 0 ? void 0 : us.image;
+                yield ftp.ftpremove(oldim);
             }
+            var base64Data = req.body.image;
+            let base64Image = base64Data.split(';base64,').pop();
+            //console.log(base64Data);
+            const filename = (0, uuid_1.v4)() + '.jpg';
+            fs_extra_1.default.writeFile(filename, base64Image, { encoding: 'base64' }, function (err) {
+                console.log('File created');
+            });
+            yield ftp.ftpupload(filename, 'images/' + filename);
+            newuser.image = 'images/' + filename;
+            yield fs_extra_1.default.unlink(filename);
         }
         newuser._id = req.userId;
-        console.log(newuser.image);
-        console.log(newuser);
         const user = yield user_1.default.findByIdAndUpdate(req.userId, newuser, { upsert: true });
         if (!user) {
             res.status(404).json('invalid user');
         }
-        res.json(newuser);
+        const re = yield user_1.default.findById(req.userId);
+        console.log(re);
+        res.json(re);
     }
     catch (e) {
         res.status(400).json(e);
     }
 });
 exports.updprofile = updprofile;
-const request_1 = __importDefault(require("request"));
-const loadimage = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const img = req.file;
-    if (img) {
-        const user = yield user_1.default.findById(req.userId, { password: 0 });
-        //request.post('host.docker.internal:3001/',);
-        request_1.default.post('localhost:3001/');
-    }
-});
-exports.loadimage = loadimage;
 const uservalidation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log(req.params);
     const ut = yield usertoken_1.default.findOne({ token: req.params.confirmationCode });
@@ -144,9 +158,38 @@ const uservalidation = (req, res) => __awaiter(void 0, void 0, void 0, function*
     if (ut) {
         const userval = ut === null || ut === void 0 ? void 0 : ut.user;
         console.log(userval);
-        yield user_1.default.findByIdAndUpdate(userval, { status: "Active" }, { upsert: true });
+        const upd = yield user_1.default.findByIdAndUpdate(userval, { status: "Active" }, { upsert: true });
+        res.json({ upd });
     }
-    res.json();
+    else {
+        res.status(404).json('invalid token');
+    }
 });
 exports.uservalidation = uservalidation;
+const uuid_1 = require("uuid");
+const imageload = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //const base64data=req.body.image;
+    var base64Data = req.body.image;
+    let base64Image = base64Data.split(';base64,').pop();
+    //console.log(base64Data);
+    const filename = (0, uuid_1.v4)() + '.jpg';
+    fs_extra_1.default.writeFile(filename, base64Image, { encoding: 'base64' }, function (err) {
+        console.log('File created');
+    });
+    yield ftp.ftpupload(filename, 'images/' + filename);
+    yield fs_extra_1.default.unlink(filename);
+    res.json('image uploaded');
+});
+exports.imageload = imageload;
+const imagedownload = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const image = req.body.image;
+    console.log(image);
+    if (image) {
+        yield ftp.ftpdownload(image, 'images/' + image);
+        const a = yield fs_extra_1.default.readFile(image, 'base64');
+        res.json(a);
+        yield fs_extra_1.default.unlink(image);
+    }
+});
+exports.imagedownload = imagedownload;
 //# sourceMappingURL=authcontroller.js.map

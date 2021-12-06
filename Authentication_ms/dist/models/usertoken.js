@@ -11,7 +11,7 @@ const usertokenSchema = new mongoose_1.Schema({
     },
     user: user_1.default.schema
 }, {
-    timestamps: true
+//timestamps: true
 });
 exports.default = (0, mongoose_1.model)('Authtoken', usertokenSchema);
 //# sourceMappingURL=usertoken.js.map

@@ -40,7 +40,7 @@ const userSchema = new mongoose_1.Schema({
         default: 'Pending'
     },
 }, {
-    timestamps: true
+//timestamps: true
 });
 userSchema.methods.encryptPassword = (password) => __awaiter(void 0, void 0, void 0, function* () {
     const salt = yield bcryptjs_1.default.genSalt(10);

@@ -23,11 +23,14 @@ function ValidateEmail(input:string):boolean{
 //import nodemailer  from 'libs/mailer';
 const nodemailer = require("../libs/mailer");
 export const signup= async(req:Request,res:Response)=>{
+    console.log('singup r')
+    console.log(req.body);
     try {
         const user : IUser=new User({
         username:req.body.username,
         email:req.body.email,
-        image:null,
+        image:"",
+        status:"Pending",
         password:req.body.password
     });
     user.password= await user.encryptPassword(user.password);
@@ -51,8 +54,13 @@ export const signup= async(req:Request,res:Response)=>{
     }catch (e) {
         res.status(400).json(e);
     }
-    res.json(saveduser);
-    console.log(saveduser);
+    const ere=saveduser.toJSON();
+    delete ere['__v'];
+    delete ere['_id'];
+   //delete ere['createdAt'];
+    //delete ere['updatedAt'];
+    console.log(ere);
+    res.json(ere);
     } catch (e) {
         res.status(400).json(e);
     }
@@ -75,68 +83,107 @@ export const signin=async (req:Request,res:Response)=>{
     const token:string=jwt.sign({_id:user._id},process.env.TOKENSECRET||'tokentest',{
         expiresIn:60*60*24
     });
-    res.header('auth-token',token).json(user);
-    
+    const ere=user.toJSON();
+    console.log(ere);
+    res.header('auth-token',token).json({'authtoken': token});
 }
 export const profile=async (req:Request,res:Response)=>{
+    //const user=await User.findById(req.userId,{password:0});
     const user=await User.findById(req.userId,{password:0});
     if(!user){
         res.status(404).json('invalid user')
     }
+    console.log(user);
     res.json(user);
 }
-
+const ftp = require("../libs/ftp");
 export const updprofile=async (req:Request,res:Response)=>{
     console.log('upd');
+    const us= await User.findById(req.userId);
     try {
         const newuser : IUser=new User({
         username:req.body.username,
-        email:req.body.email,
         password:req.body.password,
-        image:req.file?.path
+        image:req.body.image
     });
+    if(us){
+        newuser.email=us?.email;
+        newuser.status=us?.status;
+    }
     if(newuser.password){
         newuser.password= await newuser.encryptPassword(newuser.password);
     }
     if(newuser.image){
-        const oldimg=await User.findById(req.userId);
-        if(oldimg?.image){
-            const dir:string =oldimg.image;
-            await fs.unlink(path.resolve(dir));
+        if(us){
+            const oldim=us?.image;
+            await ftp.ftpremove(oldim);
         }
+        var base64Data = req.body.image;
+        let base64Image = base64Data.split(';base64,').pop();
+        //console.log(base64Data);
+        const filename=uuidv4()+'.jpg';
+        fs.writeFile(filename, base64Image, {encoding: 'base64'}, function(err) {
+            console.log('File created');
+        });
+        await ftp.ftpupload(filename,'images/'+filename);
+        newuser.image='images/'+filename;
+        await fs.unlink(filename);
     }
     newuser._id=req.userId;
-    console.log(newuser.image);
-    console.log(newuser);
     const user=await User.findByIdAndUpdate(req.userId,newuser, {upsert: true});
     if(!user){
         res.status(404).json('invalid user')
     }
-    res.json(newuser);
+    const re=await User.findById(req.userId);
+    console.log(re);
+    res.json(re);
     } catch (e) {
         res.status(400).json(e);
     }
 }
-import { v4 as uuidv4 } from 'uuid';
-import request from 'request';
-export const loadimage=async (req:Request,res:Response)=>{
-    const img=req.file;
-    if(img){
-        const user=await User.findById(req.userId,{password:0});
-        //request.post('host.docker.internal:3001/',);
-        request.post('localhost:3001/',);
-    }
-}
+
 
 export const uservalidation=async (req:Request,res:Response)=>{
     console.log(req.params);
-    const ut=await Usertoken.findOne({token:req.params.confirmationCode});
+    const ut= await Usertoken.findOne({token:req.params.confirmationCode});
     console.log(ut);
     if(ut){
         const userval=ut?.user;
         console.log(userval);
-        await User.findByIdAndUpdate(userval,{status:"Active"}, {upsert: true});
+        const upd= await User.findByIdAndUpdate(userval,{status:"Active"}, {upsert: true});
+        res.json(upd);
+    }else{
+        res.status(404).json('invalid token');
     }
-    res.json()
+}
+
+import { v4 as uuidv4 } from 'uuid';
+import fetch from "node-fetch";
+export const imageload= async (req:Request,res:Response)=>{
+    //const base64data=req.body.image;
+    var base64Data = req.body.image;
+    let base64Image = base64Data.split(';base64,').pop();
+    //console.log(base64Data);
+    const filename=uuidv4()+'.jpg';
+    fs.writeFile(filename, base64Image, {encoding: 'base64'}, function(err) {
+        console.log('File created');
+    });
+    await ftp.ftpupload(filename,'images/'+filename);
+    await fs.unlink(filename);
+    res.json('image uploaded')
+}
+
+
+export const imagedownload= async (req:Request,res:Response)=>{
+    const image=req.body.image;
+    console.log(image)
+    if(image){
+        await ftp.ftpdownload(image,image);
+        const a=await fs.readFile(image,'base64');
+        res.json({'image':a});
+        await fs.unlink(image);
+    }else{
+        res.status(404).json('invalid image path')
+    }
 }
 

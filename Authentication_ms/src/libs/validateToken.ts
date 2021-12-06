@@ -7,7 +7,8 @@ interface IPayload{
     exp:number
 }
 export  const tokenval=(req:Request,res:Response,next:NextFunction)=>{
-    const token = req.header('auth-token');
+    const token = req.header('authtoken');
+    console.log(token)
     if(!token){
         return res.status(401).json('Access denied');
     }

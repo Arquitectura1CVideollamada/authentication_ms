@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const router = (0, express_1.Router)();
@@ -10,15 +7,16 @@ const authcontroller_2 = require("../controllers/authcontroller");
 const authcontroller_3 = require("../controllers/authcontroller");
 const authcontroller_4 = require("../controllers/authcontroller");
 const authcontroller_5 = require("../controllers/authcontroller");
-const authcontroller_6 = require("../controllers/authcontroller");
-//import {updprofileimg} from '../controllers/authcontroller';
-const multer_1 = __importDefault(require("../libs/multer"));
 router.post('/signup', authcontroller_2.signup);
 router.post('/signin', authcontroller_1.signin);
 const validateToken_1 = require("../libs/validateToken");
 router.get('/profile', validateToken_1.tokenval, authcontroller_3.profile);
-router.put('/profile', validateToken_1.tokenval, multer_1.default.single('image'), authcontroller_4.updprofile);
-router.post('/image', validateToken_1.tokenval, authcontroller_5.loadimage);
-router.get('/confirm/:confirmationCode', authcontroller_6.uservalidation);
+//router.put('/profile',tokenval,multer.single('image'),updprofile);
+router.put('/profile', validateToken_1.tokenval, authcontroller_4.updprofile);
+const authcontroller_6 = require("../controllers/authcontroller");
+const authcontroller_7 = require("../controllers/authcontroller");
+router.get('/img', authcontroller_6.imageload);
+router.get('/image', authcontroller_7.imagedownload);
+router.get('/confirm/:confirmationCode', authcontroller_5.uservalidation);
 exports.default = router;
 //# sourceMappingURL=auth.js.map

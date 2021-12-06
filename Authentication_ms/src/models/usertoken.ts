@@ -11,7 +11,7 @@ const usertokenSchema =new Schema({
     },
     user:userSchema.schema
 },{
-    timestamps: true
+    //timestamps: true
 });
 
 export default model<IUsertoken>('Authtoken',usertokenSchema);
