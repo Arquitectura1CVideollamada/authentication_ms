@@ -159,7 +159,7 @@ const uservalidation = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const userval = ut === null || ut === void 0 ? void 0 : ut.user;
         console.log(userval);
         const upd = yield user_1.default.findByIdAndUpdate(userval, { status: "Active" }, { upsert: true });
-        res.json({ upd });
+        res.json(upd);
     }
     else {
         res.status(404).json('invalid token');
@@ -185,10 +185,13 @@ const imagedownload = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     const image = req.body.image;
     console.log(image);
     if (image) {
-        yield ftp.ftpdownload(image, 'images/' + image);
+        yield ftp.ftpdownload(image, image);
         const a = yield fs_extra_1.default.readFile(image, 'base64');
-        res.json(a);
+        res.json({ 'image': a });
         yield fs_extra_1.default.unlink(image);
+    }
+    else {
+        res.status(404).json('invalid image path');
     }
 });
 exports.imagedownload = imagedownload;

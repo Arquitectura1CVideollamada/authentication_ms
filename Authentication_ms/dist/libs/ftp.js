@@ -15,8 +15,8 @@ module.exports.ftpupload = function (file, fileftp) {
         client.ftp.verbose = true;
         try {
             yield client.access({
-                host: "localhost",
-                //host: "host.docker.internal",
+                //host: "localhost",
+                host: "host.docker.internal",
                 user: "myuser",
                 password: "mypass",
                 secure: false

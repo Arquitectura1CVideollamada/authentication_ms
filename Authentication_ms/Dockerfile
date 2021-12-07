@@ -6,6 +6,8 @@ COPY package*.json .
 
 RUN npm i
 
+RUN npm install typescript --save-dev
+
 COPY . .
 
 FROM base as production

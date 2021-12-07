@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "amqplib": "^0.8.0",
     "basic-ftp": "^4.6.6",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
