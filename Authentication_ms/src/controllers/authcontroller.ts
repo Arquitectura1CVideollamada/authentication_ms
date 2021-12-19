@@ -60,6 +60,24 @@ export const signup= async(req:Request,res:Response)=>{
    //delete ere['createdAt'];
     //delete ere['updatedAt'];
     console.log(ere);
+    var amqp = require('amqplib/callback_api');
+    amqp.connect('amqp://host.docker.internal', function(error0:any, connection:any) {
+        if (error0) {
+            throw error0;
+        }
+        connection.createChannel(function(error1:any, channel:any) {
+            if (error1) {
+            throw error1;
+            }
+            var queue = 'usersetting';
+            var msg = ere.email;
+            channel.assertQueue(queue, {
+            durable: false
+            });
+            channel.sendToQueue(queue, Buffer.from(msg));
+            console.log(" [x] Sent %s", msg);
+        });
+    });
     res.json(ere);
     } catch (e) {
         res.status(400).json(e);
@@ -104,7 +122,8 @@ export const updprofile=async (req:Request,res:Response)=>{
         const newuser : IUser=new User({
         username:req.body.username,
         password:req.body.password,
-        image:req.body.image
+        image:req.body.image,
+        status:"Pending"
     });
     if(us){
         newuser.email=us?.email;
@@ -185,5 +204,31 @@ export const imagedownload= async (req:Request,res:Response)=>{
     }else{
         res.status(404).json('invalid image path')
     }
+}
+
+
+export const mq= async (req:Request,res:Response)=>{
+    console.log("mq");
+    var amqp = require('amqplib/callback_api');
+    amqp.connect('amqp://host.docker.internal', function(error0:any, connection:any) {
+        if (error0) {
+            throw error0;
+        }
+        connection.createChannel(function(error1:any, channel:any) {
+            if (error1) {
+            throw error1;
+            }
+            var queue = 'hello';
+            var msg = 'Hello world';
+
+            channel.assertQueue(queue, {
+            durable: false
+            });
+
+            channel.sendToQueue(queue, Buffer.from(msg));
+            console.log(" [x] Sent %s", msg);
+        });
+    });
+    res.json({'val':'asdasd'});
 }
 

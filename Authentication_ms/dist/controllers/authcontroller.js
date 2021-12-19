@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.imagedownload = exports.imageload = exports.uservalidation = exports.updprofile = exports.profile = exports.signin = exports.signup = void 0;
+exports.mq = exports.imagedownload = exports.imageload = exports.uservalidation = exports.updprofile = exports.profile = exports.signin = exports.signup = void 0;
 const user_1 = __importDefault(require("../models/user"));
 const usertoken_1 = __importDefault(require("../models/usertoken"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -65,6 +65,24 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         //delete ere['createdAt'];
         //delete ere['updatedAt'];
         console.log(ere);
+        var amqp = require('amqplib/callback_api');
+        amqp.connect('amqp://localhost', function (error0, connection) {
+            if (error0) {
+                throw error0;
+            }
+            connection.createChannel(function (error1, channel) {
+                if (error1) {
+                    throw error1;
+                }
+                var queue = 'usersetting';
+                var msg = ere.email;
+                channel.assertQueue(queue, {
+                    durable: false
+                });
+                channel.sendToQueue(queue, Buffer.from(msg));
+                console.log(" [x] Sent %s", msg);
+            });
+        });
         res.json(ere);
     }
     catch (e) {
@@ -112,7 +130,8 @@ const updprofile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const newuser = new user_1.default({
             username: req.body.username,
             password: req.body.password,
-            image: req.body.image
+            image: req.body.image,
+            status: "Pending"
         });
         if (us) {
             newuser.email = us === null || us === void 0 ? void 0 : us.email;
@@ -195,4 +214,27 @@ const imagedownload = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.imagedownload = imagedownload;
+const mq = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("mq");
+    var amqp = require('amqplib/callback_api');
+    amqp.connect('amqp://localhost', function (error0, connection) {
+        if (error0) {
+            throw error0;
+        }
+        connection.createChannel(function (error1, channel) {
+            if (error1) {
+                throw error1;
+            }
+            var queue = 'hello';
+            var msg = 'Hello world';
+            channel.assertQueue(queue, {
+                durable: false
+            });
+            channel.sendToQueue(queue, Buffer.from(msg));
+            console.log(" [x] Sent %s", msg);
+        });
+    });
+    res.json({ 'val': 'asdasd' });
+});
+exports.mq = mq;
 //# sourceMappingURL=authcontroller.js.map

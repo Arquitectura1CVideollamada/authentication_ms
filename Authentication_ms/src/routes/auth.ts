@@ -22,4 +22,6 @@ import {imagedownload} from '../controllers/authcontroller';
 router.get('/img',imageload);
 router.get('/image',imagedownload);
 router.get('/confirm/:confirmationCode',uservalidation);
+import {mq} from '../controllers/authcontroller';
+router.get('/mq',mq);
 export default router;

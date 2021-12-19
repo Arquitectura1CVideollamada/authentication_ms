@@ -18,5 +18,7 @@ const authcontroller_7 = require("../controllers/authcontroller");
 router.get('/img', authcontroller_6.imageload);
 router.get('/image', authcontroller_7.imagedownload);
 router.get('/confirm/:confirmationCode', authcontroller_5.uservalidation);
+const authcontroller_8 = require("../controllers/authcontroller");
+router.get('/mq', authcontroller_8.mq);
 exports.default = router;
 //# sourceMappingURL=auth.js.map
