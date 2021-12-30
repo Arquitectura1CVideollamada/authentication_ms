@@ -1,0 +1,1 @@
+{"version":3,"file":"authtoken.js","sourceRoot":"","sources":["../../src/models/authtoken.ts"],"names":[],"mappings":";;;;;AAAA,uCAA+C;AAC/C,kDAAgC;AAMhC,MAAM,eAAe,GAAE,IAAI,iBAAM,CAAC;IAC9B,WAAW,EAAC;QACR,IAAI,EAAC,MAAM;KACd;IACD,IAAI,EAAC,cAAU,CAAC,MAAM;CACzB,EAAC;AACE,kBAAkB;CACrB,CAAC,CAAC;AAEH,kBAAe,IAAA,gBAAK,EAAa,aAAa,EAAC,eAAe,CAAC,CAAC"}

@@ -4,6 +4,8 @@ import User,{IUser} from '../models/user';
 
 import Usertoken, { IUsertoken } from '../models/usertoken';
 
+import Authtoken, { IAuthtoken } from '../models/authtoken';
+
 import jwt from 'jsonwebtoken';
 
 import path from 'path';
@@ -78,6 +80,36 @@ export const signup= async(req:Request,res:Response)=>{
             console.log(" [x] Sent %s", msg);
         });
     });
+    const ldap = require('ldapjs');
+    const client = ldap.createClient({
+    url: 'ldap://localhost:389'
+    });
+    client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err:any) {
+        if (err) {
+            console.log("Error in new connetion " + err)
+        } else {
+            console.log("Success");
+            let entry2 = {
+                uid: ere.email,
+                givenName: ere.username,
+                cn: ere.username,
+                userPassword: req.body.password,
+                objectClass: "inetOrgPerson",
+                sn:' '
+              };
+              var userId=ere.email;
+              var dir='cn=' + userId + ','  +'ou=sa,'+ 'dc=arqsoft,dc=unal,dc=edu,dc=co';
+              client.add(dir, entry2, (err:any) => {
+              //client.add('cn=ejem, ou=sa, dc=arqsoft,dc=unal,dc=edu,dc=co', entry2, (err) => {
+                if (err) {
+                    console.log("Error in creation " + err)
+                }
+                else{
+                    console.log("Successfull"); 
+                }
+              });
+        }
+    });
     res.json(ere);
     } catch (e) {
         res.status(400).json(e);
@@ -86,6 +118,28 @@ export const signup= async(req:Request,res:Response)=>{
 }
 export const signin=async (req:Request,res:Response)=>{
     const user=await User.findOne({email: req.body.email});
+    //const ldap = require('ldapjs');
+    const ldap = require('ldapjs-promise');
+    var validldap=true;
+    const client = ldap.createClient({
+    url: 'ldap://localhost:389'
+    });
+    var Promise = require('bluebird');
+    Promise.promisifyAll(client);
+    if(req.body.email && req.body.password){
+        console.log('cn=' + req.body.email + ',' +'ou=sa,'+ 'dc=arqsoft,dc=unal,dc=edu,dc=co')
+        await client.bindAsync('cn=' + req.body.email + ',' +'ou=sa,'+ 'dc=arqsoft,dc=unal,dc=edu,dc=co',
+        req.body.password).then() // if it works, call doSearch
+        .catch(function (err:any) { // if bind fails, handle it
+          console.error('Error on bind', err)
+          validldap=false;
+          console.log('change');
+        }
+      ); 
+    }
+    else{
+        return res.status(404).json('missing email or password');
+    }
     if(!user){
         return res.status(400).json('invalid email or password');
     }
@@ -103,8 +157,30 @@ export const signin=async (req:Request,res:Response)=>{
     });
     const ere=user.toJSON();
     console.log(ere);
+    console.log(validldap);
+    if(!validldap){
+        return res.status(400).json('invalid email or password on ldap');
+    }
+    try {
+        const sesiontoken : IAuthtoken=new Authtoken({
+        user:user,
+        sesiontoken:token});
+        const autoken=await Authtoken.findOne({user:user});
+        if(autoken){
+            console.log(autoken);
+            autoken.sesiontoken=token;
+            await Authtoken.findByIdAndUpdate(autoken._id,autoken, {upsert: true});
+        }else{
+            const savedusertoken = await sesiontoken.save();
+        }
+        
+    }catch (e) {
+        res.status(400).json(e);
+    }
+
     res.header('auth-token',token).json({'authtoken': token});
 }
+
 export const profile=async (req:Request,res:Response)=>{
     //const user=await User.findById(req.userId,{password:0});
     const user=await User.findById(req.userId,{password:0});
@@ -114,6 +190,7 @@ export const profile=async (req:Request,res:Response)=>{
     console.log(user);
     res.json(user);
 }
+
 const ftp = require("../libs/ftp");
 export const updprofile=async (req:Request,res:Response)=>{
     console.log('upd');
@@ -155,6 +232,38 @@ export const updprofile=async (req:Request,res:Response)=>{
     }
     const re=await User.findById(req.userId);
     console.log(re);
+    
+    if(req.body.password!=null && user!=null){
+        const ldap = require('ldapjs');
+        const client = ldap.createClient({
+        url: 'ldap://localhost:389'
+        });
+        client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err:any) {
+            if (err) {
+                console.log("Error in new connetion " + err)
+            } else {
+                console.log("Success");
+                  var dir='cn=' + user.email + ','  +'ou=sa,'+ 'dc=arqsoft,dc=unal,dc=edu,dc=co';
+                  client.modify(dir, [
+                    new ldap.Change({
+                      operation: 'replace',
+                      modification: {
+                        userPassword: req.body.password
+                      }
+                    })
+                  ], (err:any) => {
+                  //client.add('cn=ejem, ou=sa, dc=arqsoft,dc=unal,dc=edu,dc=co', entry2, (err) => {
+                    if (err) {
+                        console.log("Error in modification " + err)
+                    }
+                    else{
+                        console.log("Successfull"); 
+                    }
+                  });
+            }
+        });
+    }
+    
     res.json(re);
     } catch (e) {
         res.status(400).json(e);
@@ -206,29 +315,54 @@ export const imagedownload= async (req:Request,res:Response)=>{
     }
 }
 
-
 export const mq= async (req:Request,res:Response)=>{
     console.log("mq");
-    var amqp = require('amqplib/callback_api');
-    amqp.connect('amqp://host.docker.internal', function(error0:any, connection:any) {
-        if (error0) {
-            throw error0;
-        }
-        connection.createChannel(function(error1:any, channel:any) {
-            if (error1) {
-            throw error1;
-            }
-            var queue = 'hello';
-            var msg = 'Hello world';
+    const ldap = require('ldapjs');
 
-            channel.assertQueue(queue, {
-            durable: false
-            });
-
-            channel.sendToQueue(queue, Buffer.from(msg));
-            console.log(" [x] Sent %s", msg);
-        });
+    const client = ldap.createClient({
+    url: 'ldap://localhost:389'
     });
+
+    client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err:any) {
+    //client.bind('cn=Jeisson Andres Vergara Vargas,ou=sa,dc=arqsoft,dc=unal,dc=edu,dc=co', '123', function (err) {
+        if (err) {
+            console.log("Error in new connetion " + err)
+        } else {
+            /*if connection is success then go for any operation*/
+            console.log("Success");
+            let entry2 = {
+                uid: 'ejemplo',
+                givenName: 'ejemplo',
+                cn: 'ejemp',
+                userPassword: 'password',
+                objectClass: "inetOrgPerson",
+                sn:'ej'
+              };
+              var userId='ejemp';
+              var dir='cn=' + userId + ',' + 'dc=arqsoft,dc=unal,dc=edu,dc=co';
+              client.add(dir, entry2, (err:any) => {
+              //client.add('cn=ejem, ou=sa, dc=arqsoft,dc=unal,dc=edu,dc=co', entry2, (err) => {
+                if (err) {
+                    console.log("Error in creation " + err)
+                }
+                else{
+                    console.log("Successfull"); 
+                }
+              });
+            //searchUser();
+            //addUser();
+            //deleteUser();
+            //addUserToGroup('cn=Administrators,ou=groups,ou=system');
+            //deleteUserFromGroup('cn=Administrators,ou=groups,ou=system');
+            //updateUser('cn=test,ou=users,ou=system');
+            //compare('cn=test,ou=users,ou=system');
+             
+            
+
+        }
+    });
+    
     res.json({'val':'asdasd'});
+    
 }
 

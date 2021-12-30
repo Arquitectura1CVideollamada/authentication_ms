@@ -1,13 +1,17 @@
 import { Request,Response,NextFunction } from "express"
 import jwt from'jsonwebtoken';
-
+import Authtoken, { IAuthtoken } from '../models/authtoken';
 interface IPayload{
     _id:string,
     iat:number,
     exp:number
 }
-export  const tokenval=(req:Request,res:Response,next:NextFunction)=>{
+export  const tokenval=async (req:Request,res:Response,next:NextFunction)=>{
     const token = req.header('authtoken');
+    const tokenindb = await Authtoken.findOne({sesiontoken:token});
+    if(!tokenindb){
+        return res.status(401).json('Access denied');
+    }
     console.log(token)
     if(!token){
         return res.status(401).json('Access denied');
