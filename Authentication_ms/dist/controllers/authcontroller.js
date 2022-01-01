@@ -237,7 +237,7 @@ const updprofile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
         const re = yield user_1.default.findById(req.userId);
         console.log(re);
-        if (req.body.password) {
+        if (req.body.password != null && user != null) {
             const ldap = require('ldapjs');
             const client = ldap.createClient({
                 url: 'ldap://localhost:389'

@@ -82,7 +82,7 @@ export const signup= async(req:Request,res:Response)=>{
     });
     const ldap = require('ldapjs');
     const client = ldap.createClient({
-    url: 'ldap://localhost:389'
+    url: 'ldap://host.docker.internal:389'
     });
     client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err:any) {
         if (err) {
@@ -122,7 +122,7 @@ export const signin=async (req:Request,res:Response)=>{
     const ldap = require('ldapjs-promise');
     var validldap=true;
     const client = ldap.createClient({
-    url: 'ldap://localhost:389'
+    url: 'ldap://host.docker.internal:389'
     });
     var Promise = require('bluebird');
     Promise.promisifyAll(client);
@@ -236,7 +236,7 @@ export const updprofile=async (req:Request,res:Response)=>{
     if(req.body.password!=null && user!=null){
         const ldap = require('ldapjs');
         const client = ldap.createClient({
-        url: 'ldap://localhost:389'
+        url: 'ldap://host.docker.internal:389'
         });
         client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err:any) {
             if (err) {
