@@ -306,10 +306,15 @@ export const imagedownload= async (req:Request,res:Response)=>{
     const image=req.body.image;
     console.log(image)
     if(image){
-        await ftp.ftpdownload(image,image);
-        const a=await fs.readFile(image,'base64');
-        res.json({'image':a});
-        await fs.unlink(image);
+        try{
+            await ftp.ftpdownload(image,image);
+            const a=await fs.readFile(image,'base64');
+            res.json({'image':a});
+            await fs.unlink(image);
+        }
+        catch(err){
+            res.status(404).json('invalid image path')
+        }
     }else{
         res.status(404).json('invalid image path')
     }

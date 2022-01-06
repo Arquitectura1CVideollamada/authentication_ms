@@ -86,7 +86,7 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
         const ldap = require('ldapjs');
         const client = ldap.createClient({
-            url: 'ldap://localhost:389'
+            url: 'ldap://host.docker.internal:389'
         });
         client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err) {
             if (err) {
@@ -128,7 +128,7 @@ const signin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const ldap = require('ldapjs-promise');
     var validldap = true;
     const client = ldap.createClient({
-        url: 'ldap://localhost:389'
+        url: 'ldap://host.docker.internal:389'
     });
     var Promise = require('bluebird');
     Promise.promisifyAll(client);
@@ -240,7 +240,7 @@ const updprofile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (req.body.password != null && user != null) {
             const ldap = require('ldapjs');
             const client = ldap.createClient({
-                url: 'ldap://localhost:389'
+                url: 'ldap://host.docker.internal:389'
             });
             client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err) {
                 if (err) {
@@ -309,10 +309,15 @@ const imagedownload = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     const image = req.body.image;
     console.log(image);
     if (image) {
-        yield ftp.ftpdownload(image, image);
-        const a = yield fs_extra_1.default.readFile(image, 'base64');
-        res.json({ 'image': a });
-        yield fs_extra_1.default.unlink(image);
+        try {
+            yield ftp.ftpdownload(image, image);
+            const a = yield fs_extra_1.default.readFile(image, 'base64');
+            res.json({ 'image': a });
+            yield fs_extra_1.default.unlink(image);
+        }
+        catch (err) {
+            res.status(404).json('invalid image path');
+        }
     }
     else {
         res.status(404).json('invalid image path');
