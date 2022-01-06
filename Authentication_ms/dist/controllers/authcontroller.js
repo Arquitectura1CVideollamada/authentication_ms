@@ -123,8 +123,10 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.signup = signup;
 const signin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('login');
     const user = yield user_1.default.findOne({ email: req.body.email });
     //const ldap = require('ldapjs');
+    console.log(user);
     const ldap = require('ldapjs-promise');
     var validldap = true;
     const client = ldap.createClient({
@@ -170,7 +172,7 @@ const signin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             user: user,
             sesiontoken: token
         });
-        const autoken = yield authtoken_1.default.findOne({ user: user });
+        const autoken = yield authtoken_1.default.findOne({ "user.email": user.email });
         if (autoken) {
             console.log(autoken);
             autoken.sesiontoken = token;
@@ -235,6 +237,12 @@ const updprofile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!user) {
             res.status(404).json('invalid user');
         }
+        const usertok = yield authtoken_1.default.findOne({ "user.email": user.email });
+        if (usertok) {
+            usertok.user = newuser;
+        }
+        const newusertok = yield authtoken_1.default.findOneAndUpdate({ "user.email": user.email }, usertok, { upsert: true });
+        console.log(usertok);
         const re = yield user_1.default.findById(req.userId);
         console.log(re);
         if (req.body.password != null && user != null) {

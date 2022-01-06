@@ -117,8 +117,10 @@ export const signup= async(req:Request,res:Response)=>{
     
 }
 export const signin=async (req:Request,res:Response)=>{
+    console.log('login');
     const user=await User.findOne({email: req.body.email});
     //const ldap = require('ldapjs');
+    console.log(user);
     const ldap = require('ldapjs-promise');
     var validldap=true;
     const client = ldap.createClient({
@@ -165,7 +167,7 @@ export const signin=async (req:Request,res:Response)=>{
         const sesiontoken : IAuthtoken=new Authtoken({
         user:user,
         sesiontoken:token});
-        const autoken=await Authtoken.findOne({user:user});
+        const autoken=await Authtoken.findOne({"user.email":user.email});
         if(autoken){
             console.log(autoken);
             autoken.sesiontoken=token;
@@ -230,6 +232,12 @@ export const updprofile=async (req:Request,res:Response)=>{
     if(!user){
         res.status(404).json('invalid user')
     }
+    const usertok= await Authtoken.findOne({"user.email":user.email});
+    if(usertok){
+        usertok.user=newuser;
+    }
+    const newusertok= await Authtoken.findOneAndUpdate({"user.email":user.email},usertok, {upsert: true});
+    console.log(usertok);
     const re=await User.findById(req.userId);
     console.log(re);
     
