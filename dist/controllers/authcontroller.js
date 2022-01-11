@@ -237,12 +237,14 @@ const updprofile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!user) {
             res.status(404).json('invalid user');
         }
-        const usertok = yield authtoken_1.default.findOne({ "user.email": user.email });
-        if (usertok) {
-            usertok.user = newuser;
+        else {
+            const usertok = yield authtoken_1.default.findOne({ "user.email": user.email });
+            if (usertok) {
+                usertok.user = newuser;
+            }
+            const newusertok = yield authtoken_1.default.findOneAndUpdate({ "user.email": user.email }, usertok, { upsert: true });
+            console.log(usertok);
         }
-        const newusertok = yield authtoken_1.default.findOneAndUpdate({ "user.email": user.email }, usertok, { upsert: true });
-        console.log(usertok);
         const re = yield user_1.default.findById(req.userId);
         console.log(re);
         if (req.body.password != null && user != null) {

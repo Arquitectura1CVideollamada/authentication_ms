@@ -232,15 +232,16 @@ export const updprofile=async (req:Request,res:Response)=>{
     if(!user){
         res.status(404).json('invalid user')
     }
-    const usertok= await Authtoken.findOne({"user.email":user.email});
-    if(usertok){
-        usertok.user=newuser;
+    else{
+       const usertok= await Authtoken.findOne({"user.email":user.email});
+        if(usertok){
+            usertok.user=newuser;
+        }
+        const newusertok= await Authtoken.findOneAndUpdate({"user.email":user.email},usertok, {upsert: true});
+        console.log(usertok);
     }
-    const newusertok= await Authtoken.findOneAndUpdate({"user.email":user.email},usertok, {upsert: true});
-    console.log(usertok);
     const re=await User.findById(req.userId);
-    console.log(re);
-    
+    console.log(re); 
     if(req.body.password!=null && user!=null){
         const ldap = require('ldapjs');
         const client = ldap.createClient({
