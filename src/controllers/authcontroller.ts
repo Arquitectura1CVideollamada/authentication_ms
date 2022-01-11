@@ -236,9 +236,9 @@ export const updprofile=async (req:Request,res:Response)=>{
        const usertok= await Authtoken.findOne({"user.email":user.email});
         if(usertok){
             usertok.user=newuser;
+            const newusertok= await Authtoken.findOneAndUpdate({"user.email":user.email},usertok, {upsert: true});
+            console.log(usertok);
         }
-        const newusertok= await Authtoken.findOneAndUpdate({"user.email":user.email},usertok, {upsert: true});
-        console.log(usertok);
     }
     const re=await User.findById(req.userId);
     console.log(re); 
