@@ -6,7 +6,7 @@ import path from 'path';
 const app: Application= express();
 
 //setear el puerto
-app.set('port',3000);
+app.set('port',(process.env.PORT || 3000));
 
 app.use(morgan('dev'));
 app.use(express.json({limit: '50mb'}));
