@@ -5,8 +5,7 @@ import app from './app';
 import './database';
 function main(){
     var host=process.env.HOST ||'0.0.0.0';
-    var port=process.env.PORT || 3000;
-    app.listen(app.get('port'),host,()=>{
+    app.listen(app.get('port'),()=>{
         console.log('servidor funcionando')
     });
     console.log(app.get('port'));
