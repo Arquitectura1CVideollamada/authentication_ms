@@ -84,7 +84,8 @@ export const signup= async(req:Request,res:Response)=>{
     const client = ldap.createClient({
     url: 'ldap://host.docker.internal:389'
     });
-    client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err:any) {
+    try{
+       client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err:any) {
         if (err) {
             console.log("Error in new connetion " + err)
         } else {
@@ -109,7 +110,11 @@ export const signup= async(req:Request,res:Response)=>{
                 }
               });
         }
-    });
+    }); 
+    }
+    catch (e) {
+        res.status(404).json(e);
+    }
     res.json(ere);
     } catch (e) {
         res.status(400).json(e);
