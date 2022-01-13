@@ -88,33 +88,38 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const client = ldap.createClient({
             url: 'ldap://host.docker.internal:389'
         });
-        client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err) {
-            if (err) {
-                console.log("Error in new connetion " + err);
-            }
-            else {
-                console.log("Success");
-                let entry2 = {
-                    uid: ere.email,
-                    givenName: ere.username,
-                    cn: ere.username,
-                    userPassword: req.body.password,
-                    objectClass: "inetOrgPerson",
-                    sn: ' '
-                };
-                var userId = ere.email;
-                var dir = 'cn=' + userId + ',' + 'ou=sa,' + 'dc=arqsoft,dc=unal,dc=edu,dc=co';
-                client.add(dir, entry2, (err) => {
-                    //client.add('cn=ejem, ou=sa, dc=arqsoft,dc=unal,dc=edu,dc=co', entry2, (err) => {
-                    if (err) {
-                        console.log("Error in creation " + err);
-                    }
-                    else {
-                        console.log("Successfull");
-                    }
-                });
-            }
-        });
+        try {
+            client.bind('cn=admin,dc=arqsoft,dc=unal,dc=edu,dc=co', 'admin', function (err) {
+                if (err) {
+                    console.log("Error in new connetion " + err);
+                }
+                else {
+                    console.log("Success");
+                    let entry2 = {
+                        uid: ere.email,
+                        givenName: ere.username,
+                        cn: ere.username,
+                        userPassword: req.body.password,
+                        objectClass: "inetOrgPerson",
+                        sn: ' '
+                    };
+                    var userId = ere.email;
+                    var dir = 'cn=' + userId + ',' + 'ou=sa,' + 'dc=arqsoft,dc=unal,dc=edu,dc=co';
+                    client.add(dir, entry2, (err) => {
+                        //client.add('cn=ejem, ou=sa, dc=arqsoft,dc=unal,dc=edu,dc=co', entry2, (err) => {
+                        if (err) {
+                            console.log("Error in creation " + err);
+                        }
+                        else {
+                            console.log("Successfull");
+                        }
+                    });
+                }
+            });
+        }
+        catch (e) {
+            res.status(404).json(e);
+        }
         res.json(ere);
     }
     catch (e) {

@@ -10,7 +10,7 @@ const cors_1 = __importDefault(require("cors"));
 const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
 //setear el puerto
-app.set('port', 3000);
+app.set('port', (process.env.PORT || 3000));
 app.use((0, morgan_1.default)('dev'));
 app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ limit: '50mb' }));

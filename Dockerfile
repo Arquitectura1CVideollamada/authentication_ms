@@ -4,7 +4,7 @@ WORKDIR /Authentication_ms
 
 COPY package*.json .
 
-RUN npm i
+RUN npm install
 
 RUN npm install typescript --save-dev
 

@@ -9,9 +9,8 @@ dotenv_1.default.config({ path: '../env' });
 const app_1 = __importDefault(require("./app"));
 require("./database");
 function main() {
-    const host = process.env.HOST || '0.0.0.0';
-    const port = process.env.PORT || 3000;
-    app_1.default.listen(Number(port), host, () => {
+    var host = process.env.HOST || '0.0.0.0';
+    app_1.default.listen(app_1.default.get('port'), () => {
         console.log('servidor funcionando');
     });
     console.log(app_1.default.get('port'));
